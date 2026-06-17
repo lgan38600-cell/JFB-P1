@@ -1,0 +1,9 @@
+User Agreement (Placeholder)
+
+This mobile app is a companion experience for the curling wand device. The copy below is placeholder text for structure, navigation, and reading flow in the first build.
+
+1. You can add and connect a nearby curling wand from the My Devices area.
+2. Connection quality depends on your phone's Bluetooth stack, distance, and surrounding interference.
+3. This version does not yet provide device-control commands, temperature settings, account login, or after-sales tools.
+4. You are responsible for using the app and hardware in a safe and lawful manner.
+5. Replace this placeholder with approved agreement copy before public release.

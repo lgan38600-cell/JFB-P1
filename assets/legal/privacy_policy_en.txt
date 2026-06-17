@@ -1,0 +1,9 @@
+Privacy Policy (Placeholder)
+
+This page contains placeholder copy for the first release so the app can ship with the full navigation structure and reading experience before legal text is finalized.
+
+1. The app may store lightweight preferences you provide, such as language choice and the last connected device identifier.
+2. Bluetooth permission is requested only to discover and connect to your curling wand device.
+3. This version does not include account systems, cloud sync, payments, or marketing profiling.
+4. You can review language and software version inside System Settings and manage Bluetooth access in your device settings.
+5. Replace this placeholder with approved legal copy before production release.
