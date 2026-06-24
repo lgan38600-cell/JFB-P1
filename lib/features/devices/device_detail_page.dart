@@ -881,7 +881,7 @@ class _TimingSettingsSheetState extends State<_TimingSettingsSheet> {
                           CurlTimingSettings.defaults.styleSeconds,
                       value: _draftSettings.styleSeconds,
                       activeColor: const Color(0xFFF03EFF),
-                      min: 15,
+                      min: 5,
                       max: 30,
                       onChanged: (value) => setState(() {
                         _draftSettings = _draftSettings.copyWith(
