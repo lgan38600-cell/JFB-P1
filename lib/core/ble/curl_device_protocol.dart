@@ -1,12 +1,15 @@
 import 'package:flutter_application_1/features/devices/curl_timing_settings.dart';
 
-enum CurlDeviceMode { normal, autoCurl, readyToAdjust, unknown }
+enum CurlDeviceMode { standby, normal, autoCurl, readyToAdjust, unknown }
+
+enum CurlDeviceFault { none, filterCoverRemoved, motorFault, unknown }
 
 class CurlDeviceStatus {
   const CurlDeviceStatus({
     required this.mode,
     required this.windLevel,
     required this.temperatureLevel,
+    required this.fault,
     required this.curlSeconds,
     required this.styleSeconds,
     required this.coolShotSeconds,
@@ -16,12 +19,15 @@ class CurlDeviceStatus {
   final CurlDeviceMode mode;
   final int? windLevel;
   final int? temperatureLevel;
+  final CurlDeviceFault fault;
   final int curlSeconds;
   final int styleSeconds;
   final int coolShotSeconds;
   final List<int> rawFrame;
 
   bool get isReadyToAdjust => mode == CurlDeviceMode.readyToAdjust;
+
+  bool get hasFault => fault != CurlDeviceFault.none;
 
   String get windLabel {
     switch (windLevel) {
@@ -32,12 +38,14 @@ class CurlDeviceStatus {
       case 3:
         return '高';
       default:
-        return '--';
+        return mode == CurlDeviceMode.standby ? '待机' : '--';
     }
   }
 
   String get temperatureLabel {
     switch (temperatureLevel) {
+      case 0:
+        return '冷风';
       case 1:
         return '低温';
       case 2:
@@ -45,7 +53,7 @@ class CurlDeviceStatus {
       case 3:
         return '高温';
       default:
-        return '--';
+        return mode == CurlDeviceMode.standby ? '待机' : '--';
     }
   }
 
@@ -60,21 +68,31 @@ class CurlDeviceStatus {
 
 class CurlDeviceProtocol {
   static const int _headerA = 0x55;
-  static const int _headerB = 0xAA;
-  static const int _settingsCloseFlag = 0x81;
+  static const int _statusOk = 0xAA;
+  static const int _filterCoverRemoved = 0xBB;
+  static const int _motorFault = 0xCC;
+  static const int _autoCurlEnabledFlag = 0x80;
+  static const int _autoCurlDisabledFlag = 0x81;
   static const int _tail = 0xF1;
 
   static CurlDeviceStatus? parseStatusFrame(List<int> frame) {
-    if (frame.length < 6 || frame[0] != _headerA || frame[1] != _headerB) {
+    if (frame.length < 6 || frame[0] != _headerA) {
+      return null;
+    }
+
+    final fault = _decodeFault(frame[1]);
+    if (fault == CurlDeviceFault.unknown) {
       return null;
     }
 
     if (frame.length >= 7 &&
-        (frame[5] == 0x80 || frame[5] == _settingsCloseFlag)) {
+        (frame[5] == _autoCurlEnabledFlag ||
+            frame[5] == _autoCurlDisabledFlag)) {
       return CurlDeviceStatus(
         mode: CurlDeviceMode.unknown,
         windLevel: null,
         temperatureLevel: null,
+        fault: fault,
         curlSeconds: frame[2],
         styleSeconds: frame[3],
         coolShotSeconds: frame[4],
@@ -89,6 +107,19 @@ class CurlDeviceProtocol {
       coolShotSeconds: frame[5],
     );
 
+    if (state == 0x00) {
+      return CurlDeviceStatus(
+        mode: CurlDeviceMode.standby,
+        windLevel: null,
+        temperatureLevel: null,
+        fault: fault,
+        curlSeconds: timing.curlSeconds,
+        styleSeconds: timing.styleSeconds,
+        coolShotSeconds: timing.coolShotSeconds,
+        rawFrame: List<int>.unmodifiable(frame),
+      );
+    }
+
     final windAndTemperature = _decodeWindAndTemperature(state);
     if (state >= 0x81 && state <= 0x89) {
       return CurlDeviceStatus(
@@ -100,6 +131,7 @@ class CurlDeviceProtocol {
             : CurlDeviceMode.autoCurl,
         windLevel: windAndTemperature.$1,
         temperatureLevel: windAndTemperature.$2,
+        fault: fault,
         curlSeconds: timing.curlSeconds,
         styleSeconds: timing.styleSeconds,
         coolShotSeconds: timing.coolShotSeconds,
@@ -112,6 +144,20 @@ class CurlDeviceProtocol {
         mode: CurlDeviceMode.normal,
         windLevel: windAndTemperature.$1,
         temperatureLevel: windAndTemperature.$2,
+        fault: fault,
+        curlSeconds: timing.curlSeconds,
+        styleSeconds: timing.styleSeconds,
+        coolShotSeconds: timing.coolShotSeconds,
+        rawFrame: List<int>.unmodifiable(frame),
+      );
+    }
+
+    if (state >= 0x0A && state <= 0x0C) {
+      return CurlDeviceStatus(
+        mode: CurlDeviceMode.normal,
+        windLevel: state - 0x09,
+        temperatureLevel: 0,
+        fault: fault,
         curlSeconds: timing.curlSeconds,
         styleSeconds: timing.styleSeconds,
         coolShotSeconds: timing.coolShotSeconds,
@@ -123,6 +169,7 @@ class CurlDeviceProtocol {
       mode: CurlDeviceMode.unknown,
       windLevel: null,
       temperatureLevel: null,
+      fault: fault,
       curlSeconds: timing.curlSeconds,
       styleSeconds: timing.styleSeconds,
       coolShotSeconds: timing.coolShotSeconds,
@@ -130,16 +177,28 @@ class CurlDeviceProtocol {
     );
   }
 
-  static List<int> buildTimingSettingsCommand(CurlTimingSettings settings) {
+  static List<int> buildTimingSettingsCommand(
+    CurlTimingSettings settings, {
+    required bool isAutoCurlEnabled,
+  }) {
     return <int>[
       _headerA,
-      _headerB,
+      _statusOk,
       settings.curlSeconds,
       settings.styleSeconds,
       settings.coolShotSeconds,
-      _settingsCloseFlag,
+      isAutoCurlEnabled ? _autoCurlEnabledFlag : _autoCurlDisabledFlag,
       _tail,
     ];
+  }
+
+  static CurlDeviceFault _decodeFault(int value) {
+    return switch (value) {
+      _statusOk => CurlDeviceFault.none,
+      _filterCoverRemoved => CurlDeviceFault.filterCoverRemoved,
+      _motorFault => CurlDeviceFault.motorFault,
+      _ => CurlDeviceFault.unknown,
+    };
   }
 
   static (int windLevel, int temperatureLevel) _decodeWindAndTemperature(

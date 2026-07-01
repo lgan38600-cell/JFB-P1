@@ -166,6 +166,7 @@ class FlutterBleRepository implements BleRepository {
   Future<BleCommandResult> writeCurlTimingSettings(
     String deviceId,
     CurlTimingSettings settings,
+    bool isAutoCurlEnabled,
   ) async {
     if (!_hasProtocolUuids) {
       return const BleCommandResult.failure(
@@ -176,7 +177,10 @@ class FlutterBleRepository implements BleRepository {
     try {
       final characteristics = await _resolveProtocolCharacteristics(deviceId);
       await characteristics.writeCharacteristic.write(
-        CurlDeviceProtocol.buildTimingSettingsCommand(settings),
+        CurlDeviceProtocol.buildTimingSettingsCommand(
+          settings,
+          isAutoCurlEnabled: isAutoCurlEnabled,
+        ),
         withResponse: true,
       );
       return const BleCommandResult.success();

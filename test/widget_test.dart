@@ -158,6 +158,7 @@ class MemoryAppPreferences implements AppPreferences {
   String? serialNumber;
   String? hairProfileResponse;
   String? curlTimingSettings;
+  bool? autoCurlEnabled;
 
   @override
   Future<Locale?> loadLocale() async => locale;
@@ -170,6 +171,9 @@ class MemoryAppPreferences implements AppPreferences {
 
   @override
   Future<String?> loadProductSerialNumber() async => serialNumber;
+
+  @override
+  Future<bool?> loadAutoCurlEnabled() async => autoCurlEnabled;
 
   @override
   Future<void> clearProductSerialNumber() async {
@@ -199,6 +203,11 @@ class MemoryAppPreferences implements AppPreferences {
   @override
   Future<void> saveProductSerialNumber(String serialNumber) async {
     this.serialNumber = serialNumber;
+  }
+
+  @override
+  Future<void> saveAutoCurlEnabled(bool isEnabled) async {
+    autoCurlEnabled = isEnabled;
   }
 }
 
@@ -257,6 +266,7 @@ class FakeBleRepository implements BleRepository {
   Future<BleCommandResult> writeCurlTimingSettings(
     String deviceId,
     CurlTimingSettings settings,
+    bool isAutoCurlEnabled,
   ) async {
     return const BleCommandResult.success();
   }

@@ -36,6 +36,7 @@ class AppController extends ChangeNotifier {
   String? _savedSerialNumber;
   HairProfileResponse? _hairProfileResponse;
   CurlTimingSettings _curlTimingSettings = CurlTimingSettings.defaults;
+  bool _isAutoCurlEnabled = true;
   CurlDeviceStatus? _deviceStatus;
   String? _deviceCommandError;
   BleDeviceRecord? _primaryDevice;
@@ -60,6 +61,7 @@ class AppController extends ChangeNotifier {
   HairProfileResponse? get hairProfileResponse => _hairProfileResponse;
   bool get needsHairProfileQuestionnaire => _hairProfileResponse == null;
   CurlTimingSettings get curlTimingSettings => _curlTimingSettings;
+  bool get isAutoCurlEnabled => _isAutoCurlEnabled;
   CurlDeviceStatus? get deviceStatus => _deviceStatus;
   String? get deviceCommandError => _deviceCommandError;
   BleDeviceRecord? get primaryDevice => _primaryDevice;
@@ -81,6 +83,7 @@ class AppController extends ChangeNotifier {
         savedCurlTimingSettings,
       );
     }
+    _isAutoCurlEnabled = await preferences.loadAutoCurlEnabled() ?? true;
     _primaryDevice = await bleRepository.restoreLastDevice();
     _adapterSubscription = bleRepository.watchAdapterState().listen((state) {
       _adapterState = state;
@@ -125,6 +128,33 @@ class AppController extends ChangeNotifier {
     final result = await bleRepository.writeCurlTimingSettings(
       device.id,
       settings,
+      _isAutoCurlEnabled,
+    );
+    if (!result.isSuccess) {
+      _deviceCommandError = result.errorMessage;
+      notifyListeners();
+    }
+    return result;
+  }
+
+  Future<BleCommandResult> setAutoCurlEnabled(bool isEnabled) async {
+    if (_isAutoCurlEnabled == isEnabled) {
+      return const BleCommandResult.success();
+    }
+    _isAutoCurlEnabled = isEnabled;
+    _deviceCommandError = null;
+    notifyListeners();
+    await preferences.saveAutoCurlEnabled(isEnabled);
+
+    final device = _primaryDevice;
+    if (device == null || !device.isConnected) {
+      return const BleCommandResult.success();
+    }
+
+    final result = await bleRepository.writeCurlTimingSettings(
+      device.id,
+      _curlTimingSettings,
+      isEnabled,
     );
     if (!result.isSuccess) {
       _deviceCommandError = result.errorMessage;
@@ -146,6 +176,7 @@ class AppController extends ChangeNotifier {
     _primaryDevice = null;
     _savedSerialNumber = null;
     _curlTimingSettings = CurlTimingSettings.defaults;
+    _isAutoCurlEnabled = true;
     _deviceStatus = null;
     _deviceCommandError = null;
     _connectionError = null;
@@ -155,6 +186,7 @@ class AppController extends ChangeNotifier {
     await bleRepository.forgetLastDevice();
     await preferences.clearProductSerialNumber();
     await preferences.clearCurlTimingSettings();
+    await preferences.saveAutoCurlEnabled(true);
   }
 
   void selectTab(int index) {
@@ -329,7 +361,8 @@ class AppController extends ChangeNotifier {
         .listen(
           (status) {
             _deviceStatus = status;
-            if (status.mode == CurlDeviceMode.normal ||
+            if (status.mode == CurlDeviceMode.standby ||
+                status.mode == CurlDeviceMode.normal ||
                 status.mode == CurlDeviceMode.unknown) {
               final nextSettings = status.timingSettings;
               if (nextSettings.curlSeconds > 0 &&

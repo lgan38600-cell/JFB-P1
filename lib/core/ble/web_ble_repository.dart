@@ -41,6 +41,7 @@ class WebBleRepository implements BleRepository {
   Future<BleCommandResult> writeCurlTimingSettings(
     String deviceId,
     CurlTimingSettings settings,
+    bool isAutoCurlEnabled,
   ) async {
     return const BleCommandResult.failure(
       'Bluetooth preview is unavailable in the web build.',

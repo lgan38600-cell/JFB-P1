@@ -170,13 +170,19 @@ class _OverviewTabState extends State<_OverviewTab> {
             const SizedBox(width: 14),
             Expanded(
               child: _StatusPill(
-                icon: Icons.link_off_rounded,
-                label: localizations.deviceAbnormalStatus,
+                icon: deviceStatus?.hasFault ?? false
+                    ? Icons.error_outline_rounded
+                    : Icons.check_circle_outline_rounded,
+                label: _faultStatusLabel(context, deviceStatus?.fault),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
+        if (deviceStatus?.hasFault ?? false) ...<Widget>[
+          _FaultGuideCard(fault: deviceStatus!.fault),
+          const SizedBox(height: 12),
+        ],
         _InfoCard(
           leading: Icons.tips_and_updates_outlined,
           title: device.isConnected
@@ -225,6 +231,16 @@ class _OverviewTabState extends State<_OverviewTab> {
         ),
       ],
     );
+  }
+
+  String _faultStatusLabel(BuildContext context, CurlDeviceFault? fault) {
+    final isEnglish = Localizations.localeOf(context).languageCode == 'en';
+    return switch (fault) {
+      CurlDeviceFault.filterCoverRemoved =>
+        isEnglish ? 'Filter issue' : '滤网罩脱落',
+      CurlDeviceFault.motorFault => isEnglish ? 'Motor fault' : '电机故障',
+      _ => isEnglish ? 'Normal' : '状态正常',
+    };
   }
 
   Future<void> _openTimingSheet(
@@ -313,6 +329,9 @@ class _SettingsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = AppScope.of(context);
+    final isAutoCurlEnabled = controller.isAutoCurlEnabled;
+
     return ListView(
       padding: EdgeInsets.zero,
       children: <Widget>[
@@ -332,6 +351,17 @@ class _SettingsTab extends StatelessWidget {
               : localizations.disconnected,
         ),
         const SizedBox(height: 12),
+        if (device.isConnected) ...<Widget>[
+          _InfoCard(
+            leading: Icons.auto_mode_rounded,
+            title: localizations.deviceAutoCurlTitle,
+            subtitle: _autoCurlStatusLabel(context, isAutoCurlEnabled),
+            trailing: Icons.chevron_right_rounded,
+            onTap: () =>
+                _openAutoCurlDialog(context, isEnabled: isAutoCurlEnabled),
+          ),
+          const SizedBox(height: 12),
+        ],
         if (device.isConnected)
           OutlinedButton(
             onPressed: onDisconnect,
@@ -347,6 +377,159 @@ class _SettingsTab extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  String _autoCurlStatusLabel(BuildContext context, bool isEnabled) {
+    final isEnglish = Localizations.localeOf(context).languageCode == 'en';
+    if (isEnabled) {
+      return isEnglish ? 'On' : '已开启';
+    }
+    return isEnglish ? 'Off' : '已关闭';
+  }
+
+  Future<void> _openAutoCurlDialog(
+    BuildContext context, {
+    required bool isEnabled,
+  }) async {
+    final controller = AppScope.of(context);
+    final isEnglish = Localizations.localeOf(context).languageCode == 'en';
+    final enabledLabel = isEnglish ? 'On' : '开启';
+    final disabledLabel = isEnglish ? 'Off' : '关闭';
+    bool selectedValue = isEnabled;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppTheme.surface,
+              title: Text(localizations.deviceAutoCurlTitle),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  ListTile(
+                    title: Text(enabledLabel),
+                    trailing: selectedValue
+                        ? const Icon(Icons.check_rounded)
+                        : null,
+                    onTap: () {
+                      setDialogState(() {
+                        selectedValue = true;
+                      });
+                    },
+                  ),
+                  ListTile(
+                    title: Text(disabledLabel),
+                    trailing: !selectedValue
+                        ? const Icon(Icons.check_rounded)
+                        : null,
+                    onTap: () {
+                      setDialogState(() {
+                        selectedValue = false;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text(localizations.cancelAction),
+                ),
+                FilledButton(
+                  onPressed: () =>
+                      Navigator.of(dialogContext).pop(selectedValue),
+                  child: Text(localizations.saveButton),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null) {
+      return;
+    }
+    final saveResult = await controller.setAutoCurlEnabled(result);
+    if (!context.mounted || saveResult.isSuccess) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(saveResult.errorMessage ?? 'Write failed')),
+    );
+  }
+}
+
+class _FaultGuideCard extends StatelessWidget {
+  const _FaultGuideCard({required this.fault});
+
+  final CurlDeviceFault fault;
+
+  @override
+  Widget build(BuildContext context) {
+    final isEnglish = Localizations.localeOf(context).languageCode == 'en';
+    final (title, subtitle, icon) = switch (fault) {
+      CurlDeviceFault.filterCoverRemoved => (
+        isEnglish ? 'Filter cage removed' : '尾部滤网罩脱落',
+        isEnglish
+            ? 'Reinstall the rear filter cage and confirm it is locked in place before use.'
+            : '请重新安装尾部滤网罩，确认卡扣到位后再使用。',
+        Icons.filter_alt_off_rounded,
+      ),
+      CurlDeviceFault.motorFault => (
+        isEnglish ? 'Motor fault' : '电机故障',
+        isEnglish
+            ? 'Stop using the device and contact after-sales support.'
+            : '请停止使用设备，并联系售后支持。',
+        Icons.warning_amber_rounded,
+      ),
+      _ => (
+        isEnglish ? 'Device fault' : '设备异常',
+        isEnglish ? 'Check the device before continuing.' : '请检查设备后再继续使用。',
+        Icons.error_outline_rounded,
+      ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF5A1010).withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFFF7A7A).withValues(alpha: 0.5),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Icon(icon, size: 26, color: Colors.white),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontSize: 16),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.78),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

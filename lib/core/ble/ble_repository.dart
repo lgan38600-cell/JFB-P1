@@ -20,6 +20,7 @@ abstract class BleRepository {
   Future<BleCommandResult> writeCurlTimingSettings(
     String deviceId,
     CurlTimingSettings settings,
+    bool isAutoCurlEnabled,
   );
 
   Future<BleDeviceRecord?> restoreLastDevice();

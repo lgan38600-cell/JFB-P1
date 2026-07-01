@@ -16,11 +16,65 @@ void main() {
 
     expect(status, isNotNull);
     expect(status!.mode, CurlDeviceMode.normal);
+    expect(status.fault, CurlDeviceFault.none);
     expect(status.windLabel, '低');
     expect(status.temperatureLabel, '低温');
     expect(status.curlSeconds, 14);
     expect(status.styleSeconds, 8);
     expect(status.coolShotSeconds, 5);
+  });
+
+  test('parses standby and cool air normal status frames', () {
+    final standbyStatus = CurlDeviceProtocol.parseStatusFrame(const <int>[
+      0x55,
+      0xAA,
+      0x00,
+      0x0E,
+      0x08,
+      0x05,
+    ]);
+    final coolAirStatus = CurlDeviceProtocol.parseStatusFrame(const <int>[
+      0x55,
+      0xAA,
+      0x0C,
+      0x0E,
+      0x08,
+      0x05,
+    ]);
+
+    expect(standbyStatus, isNotNull);
+    expect(standbyStatus!.mode, CurlDeviceMode.standby);
+    expect(standbyStatus.windLabel, '待机');
+    expect(standbyStatus.temperatureLabel, '待机');
+    expect(coolAirStatus, isNotNull);
+    expect(coolAirStatus!.mode, CurlDeviceMode.normal);
+    expect(coolAirStatus.windLabel, '高');
+    expect(coolAirStatus.temperatureLabel, '冷风');
+  });
+
+  test('parses device fault from status byte', () {
+    final filterStatus = CurlDeviceProtocol.parseStatusFrame(const <int>[
+      0x55,
+      0xBB,
+      0x81,
+      0x10,
+      0x08,
+      0x05,
+    ]);
+    final motorStatus = CurlDeviceProtocol.parseStatusFrame(const <int>[
+      0x55,
+      0xCC,
+      0x01,
+      0x0E,
+      0x08,
+      0x05,
+    ]);
+
+    expect(filterStatus, isNotNull);
+    expect(filterStatus!.fault, CurlDeviceFault.filterCoverRemoved);
+    expect(filterStatus.hasFault, isTrue);
+    expect(motorStatus, isNotNull);
+    expect(motorStatus!.fault, CurlDeviceFault.motorFault);
   });
 
   test('parses auto curl ready frame', () {
@@ -45,9 +99,21 @@ void main() {
         styleSeconds: 8,
         coolShotSeconds: 5,
       ),
+      isAutoCurlEnabled: true,
     );
 
-    expect(command, const <int>[0x55, 0xAA, 0x0E, 0x08, 0x05, 0x81, 0xF1]);
+    expect(command, const <int>[0x55, 0xAA, 0x0E, 0x08, 0x05, 0x80, 0xF1]);
+    expect(
+      CurlDeviceProtocol.buildTimingSettingsCommand(
+        const CurlTimingSettings(
+          curlSeconds: 14,
+          styleSeconds: 8,
+          coolShotSeconds: 5,
+        ),
+        isAutoCurlEnabled: false,
+      ),
+      const <int>[0x55, 0xAA, 0x0E, 0x08, 0x05, 0x81, 0xF1],
+    );
   });
 
   test('expands short ble protocol uuids to standard 128-bit uuids', () {

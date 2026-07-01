@@ -215,6 +215,25 @@ void main() {
     expect(preferences.curlTimingSettings, isNotNull);
   });
 
+  test('auto curl setting defaults on and persists changes', () async {
+    final preferences = MemoryAppPreferences();
+    final controller = AppController(
+      preferences: preferences,
+      packageInfoService: FakePackageInfoService(),
+      bleRepository: FakeBleRepository(),
+      serialRecognitionService: FakeSerialRecognitionService(),
+    );
+
+    await controller.initialize();
+
+    expect(controller.isAutoCurlEnabled, isTrue);
+
+    await controller.setAutoCurlEnabled(false);
+
+    expect(controller.isAutoCurlEnabled, isFalse);
+    expect(preferences.autoCurlEnabled, isFalse);
+  });
+
   test(
     'removing primary device data clears saved device and local settings',
     () async {
@@ -260,6 +279,7 @@ class MemoryAppPreferences implements AppPreferences {
   String? serialNumber;
   String? hairProfileResponse;
   String? curlTimingSettings;
+  bool? autoCurlEnabled;
 
   @override
   Future<Locale?> loadLocale() async => locale;
@@ -272,6 +292,9 @@ class MemoryAppPreferences implements AppPreferences {
 
   @override
   Future<String?> loadProductSerialNumber() async => serialNumber;
+
+  @override
+  Future<bool?> loadAutoCurlEnabled() async => autoCurlEnabled;
 
   @override
   Future<void> clearProductSerialNumber() async {
@@ -301,6 +324,11 @@ class MemoryAppPreferences implements AppPreferences {
   @override
   Future<void> saveProductSerialNumber(String serialNumber) async {
     this.serialNumber = serialNumber;
+  }
+
+  @override
+  Future<void> saveAutoCurlEnabled(bool isEnabled) async {
+    autoCurlEnabled = isEnabled;
   }
 }
 
@@ -371,6 +399,7 @@ class FakeBleRepository implements BleRepository {
   Future<BleCommandResult> writeCurlTimingSettings(
     String deviceId,
     CurlTimingSettings settings,
+    bool isAutoCurlEnabled,
   ) async {
     return const BleCommandResult.success();
   }

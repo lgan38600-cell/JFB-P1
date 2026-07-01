@@ -21,6 +21,10 @@ abstract class AppPreferences {
   Future<void> saveCurlTimingSettings(String response);
 
   Future<void> clearCurlTimingSettings();
+
+  Future<bool?> loadAutoCurlEnabled();
+
+  Future<void> saveAutoCurlEnabled(bool isEnabled);
 }
 
 class SharedAppPreferences implements AppPreferences {
@@ -31,6 +35,7 @@ class SharedAppPreferences implements AppPreferences {
   static const _productSerialNumberKey = 'product_serial_number';
   static const _hairProfileResponseKey = 'hair_profile_response';
   static const _curlTimingSettingsKey = 'curl_timing_settings';
+  static const _autoCurlEnabledKey = 'auto_curl_enabled';
 
   final SharedPreferencesAsync _preferences;
 
@@ -96,5 +101,15 @@ class SharedAppPreferences implements AppPreferences {
   @override
   Future<void> clearCurlTimingSettings() {
     return _preferences.remove(_curlTimingSettingsKey);
+  }
+
+  @override
+  Future<bool?> loadAutoCurlEnabled() {
+    return _preferences.getBool(_autoCurlEnabledKey);
+  }
+
+  @override
+  Future<void> saveAutoCurlEnabled(bool isEnabled) {
+    return _preferences.setBool(_autoCurlEnabledKey, isEnabled);
   }
 }
