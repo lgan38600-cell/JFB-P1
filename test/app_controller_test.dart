@@ -37,6 +37,61 @@ void main() {
     expect(controller.versionLabel, 'v9.9.9 (42)');
   });
 
+  test('auto reconnects restored device when bluetooth is ready', () async {
+    final repository = FakeBleRepository(
+      restoredDevice: BleDeviceRecord(
+        id: 'saved-1',
+        name: 'Saved Wand',
+        rssi: -48,
+        isConnected: false,
+        isConnecting: false,
+        lastSeenAt: DateTime(2026),
+      ),
+    );
+    final controller = AppController(
+      preferences: MemoryAppPreferences(),
+      packageInfoService: FakePackageInfoService(),
+      bleRepository: repository,
+      serialRecognitionService: FakeSerialRecognitionService(),
+    );
+
+    await controller.initialize();
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(repository.connectCallCount, 1);
+    expect(controller.primaryDevice?.isConnected, isTrue);
+  });
+
+  test(
+    'does not auto reconnect restored device while bluetooth is off',
+    () async {
+      final repository = FakeBleRepository(
+        restoredDevice: BleDeviceRecord(
+          id: 'saved-1',
+          name: 'Saved Wand',
+          rssi: -48,
+          isConnected: false,
+          isConnecting: false,
+          lastSeenAt: DateTime(2026),
+        ),
+        adapterState: BleAdapterState.poweredOff,
+      );
+      final controller = AppController(
+        preferences: MemoryAppPreferences(),
+        packageInfoService: FakePackageInfoService(),
+        bleRepository: repository,
+        serialRecognitionService: FakeSerialRecognitionService(),
+      );
+
+      await controller.initialize();
+      await controller.handleAppResumed();
+
+      expect(repository.connectCallCount, 0);
+      expect(controller.primaryDevice?.isConnected, isFalse);
+    },
+  );
+
   test('connect and disconnect update device state', () async {
     final repository = FakeBleRepository();
     final controller = AppController(
@@ -352,6 +407,7 @@ class FakeBleRepository implements BleRepository {
   final List<String> disconnectedDeviceIds = <String>[];
   bool forgotLastDevice = false;
   int scanCallCount = 0;
+  int connectCallCount = 0;
   final StreamController<BleAdapterState> adapterController =
       StreamController<BleAdapterState>.broadcast();
   final StreamController<List<BleDeviceRecord>> scanController =
@@ -362,7 +418,10 @@ class FakeBleRepository implements BleRepository {
       StreamController<String>.broadcast();
 
   @override
-  Future<BleConnectionResult> connect(String deviceId) async => connectResult;
+  Future<BleConnectionResult> connect(String deviceId) async {
+    connectCallCount += 1;
+    return connectResult;
+  }
 
   @override
   Future<void> disconnect(String deviceId) async {

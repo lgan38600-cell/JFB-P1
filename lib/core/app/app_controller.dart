@@ -47,6 +47,7 @@ class AppController extends ChangeNotifier {
   StreamSubscription<List<BleDeviceRecord>>? _scanSubscription;
   StreamSubscription<CurlDeviceStatus>? _deviceStatusSubscription;
   Timer? _scanPhaseTimer;
+  bool _isAutoReconnectInFlight = false;
 
   int get selectedTabIndex => _selectedTabIndex;
   Locale get locale => _locale;
@@ -87,13 +88,27 @@ class AppController extends ChangeNotifier {
     _primaryDevice = await bleRepository.restoreLastDevice();
     _adapterSubscription = bleRepository.watchAdapterState().listen((state) {
       _adapterState = state;
+      if (state == BleAdapterState.poweredOff ||
+          state == BleAdapterState.unavailable) {
+        _markPrimaryDeviceDisconnected();
+      }
       notifyListeners();
+      if (state == BleAdapterState.ready) {
+        unawaited(_autoReconnectPrimaryDevice());
+      }
     });
     _disconnectSubscription = bleRepository.watchDisconnectedDeviceIds().listen(
       _handleDeviceDisconnected,
     );
     _isInitialized = true;
     notifyListeners();
+  }
+
+  Future<void> handleAppResumed() async {
+    if (!_isInitialized) {
+      return;
+    }
+    await _autoReconnectPrimaryDevice();
   }
 
   Future<SerialRecognitionResult> captureSerialNumber() {
@@ -321,6 +336,55 @@ class AppController extends ChangeNotifier {
     );
     _updateScanItem(device.id, isConnecting: false, isConnected: false);
     notifyListeners();
+  }
+
+  Future<void> _autoReconnectPrimaryDevice() async {
+    if (_isAutoReconnectInFlight) {
+      return;
+    }
+    final device = _primaryDevice;
+    if (device == null || device.isConnected || device.isConnecting) {
+      return;
+    }
+    if (_adapterState != BleAdapterState.ready) {
+      return;
+    }
+
+    _isAutoReconnectInFlight = true;
+    try {
+      final granted = await bleRepository.ensurePermissions();
+      _hasBluetoothPermission = granted;
+      if (!granted) {
+        notifyListeners();
+        return;
+      }
+      final currentDevice = _primaryDevice;
+      if (currentDevice == null ||
+          currentDevice.isConnected ||
+          currentDevice.isConnecting ||
+          _adapterState != BleAdapterState.ready) {
+        return;
+      }
+      await connectToDevice(currentDevice);
+    } finally {
+      _isAutoReconnectInFlight = false;
+    }
+  }
+
+  void _markPrimaryDeviceDisconnected() {
+    final device = _primaryDevice;
+    if (device == null) {
+      return;
+    }
+    _deviceStatusSubscription?.cancel();
+    _deviceStatusSubscription = null;
+    _deviceStatus = null;
+    _primaryDevice = device.copyWith(
+      isConnected: false,
+      isConnecting: false,
+      lastSeenAt: DateTime.now(),
+    );
+    _updateScanItem(device.id, isConnecting: false, isConnected: false);
   }
 
   Future<void> openBluetoothSettings() async {

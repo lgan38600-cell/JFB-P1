@@ -41,6 +41,26 @@ class DevicesTab extends StatelessWidget {
           onPressed: () => _openSerialEntryPage(context),
           child: Text(localizations.productSerialNumber),
         ),
+        if (_shouldShowBluetoothIssue(
+          controller.adapterState,
+          controller.hasBluetoothPermission,
+        )) ...<Widget>[
+          const SizedBox(height: 18),
+          _BluetoothIssueCard(
+            title: _bluetoothIssueTitle(context, controller.adapterState),
+            body: _bluetoothIssueBody(context, controller.adapterState),
+            actionLabel:
+                controller.adapterState == BleAdapterState.unauthorized ||
+                    !controller.hasBluetoothPermission
+                ? localizations.openSystemSettings
+                : localizations.retry,
+            onAction:
+                controller.adapterState == BleAdapterState.unauthorized ||
+                    !controller.hasBluetoothPermission
+                ? controller.openBluetoothSettings
+                : controller.handleAppResumed,
+          ),
+        ],
         if (savedSerialNumber != null) ...<Widget>[
           const SizedBox(height: 18),
           Text(
@@ -81,6 +101,47 @@ class DevicesTab extends StatelessWidget {
         ],
       ],
     );
+  }
+
+  bool _shouldShowBluetoothIssue(
+    BleAdapterState adapterState,
+    bool hasBluetoothPermission,
+  ) {
+    return !hasBluetoothPermission ||
+        adapterState == BleAdapterState.unauthorized ||
+        adapterState == BleAdapterState.unavailable ||
+        adapterState == BleAdapterState.poweredOff;
+  }
+
+  String _bluetoothIssueTitle(
+    BuildContext context,
+    BleAdapterState adapterState,
+  ) {
+    final isEnglish = Localizations.localeOf(context).languageCode == 'en';
+    if (adapterState == BleAdapterState.unauthorized) {
+      return isEnglish ? 'Bluetooth permission required' : '需要蓝牙权限';
+    }
+    return isEnglish ? 'Bluetooth initialization failed' : '蓝牙初始化失败';
+  }
+
+  String _bluetoothIssueBody(
+    BuildContext context,
+    BleAdapterState adapterState,
+  ) {
+    final isEnglish = Localizations.localeOf(context).languageCode == 'en';
+    if (adapterState == BleAdapterState.unauthorized) {
+      return isEnglish
+          ? 'Allow Bluetooth access, then return to the app to reconnect your saved device.'
+          : '请允许蓝牙权限，回到 App 后会自动重连已保存设备。';
+    }
+    if (adapterState == BleAdapterState.unavailable) {
+      return isEnglish
+          ? 'Bluetooth is unavailable on this device. Check system settings and try again.'
+          : '当前设备蓝牙不可用，请检查系统设置后重试。';
+    }
+    return isEnglish
+        ? 'Turn on Bluetooth. The app will reconnect your saved device when Bluetooth is ready.'
+        : '请先打开手机蓝牙。蓝牙就绪后，App 会自动重连已保存设备。';
   }
 
   String _statusLabel(
@@ -164,6 +225,61 @@ class DevicesTab extends StatelessWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(localizations.deviceDataDeleted)));
+  }
+}
+
+class _BluetoothIssueCard extends StatelessWidget {
+  const _BluetoothIssueCard({
+    required this.title,
+    required this.body,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final String title;
+  final String body;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.elevatedSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.outline),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Icon(Icons.bluetooth_disabled_rounded, size: 26),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontSize: 16),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  body,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.mutedForeground,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton(onPressed: onAction, child: Text(actionLabel)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

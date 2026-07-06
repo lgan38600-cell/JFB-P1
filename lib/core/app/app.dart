@@ -20,12 +20,14 @@ class AppBootstrap extends StatefulWidget {
   State<AppBootstrap> createState() => _AppBootstrapState();
 }
 
-class _AppBootstrapState extends State<AppBootstrap> {
+class _AppBootstrapState extends State<AppBootstrap>
+    with WidgetsBindingObserver {
   late final AppController _controller;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final preferences = SharedPreferencesAsync();
     _controller = AppController(
       preferences: SharedAppPreferences(preferences),
@@ -40,8 +42,16 @@ class _AppBootstrapState extends State<AppBootstrap> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _controller.handleAppResumed();
+    }
   }
 
   @override
