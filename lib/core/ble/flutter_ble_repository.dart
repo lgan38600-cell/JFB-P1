@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_application_1/core/ble/ble_repository.dart';
 import 'package:flutter_application_1/core/ble/curl_device_protocol.dart';
 import 'package:flutter_application_1/core/ble/models.dart';
@@ -156,7 +157,14 @@ class FlutterBleRepository implements BleRepository {
     ).asyncExpand((characteristics) {
       return characteristics.notifyCharacteristic
           .subscribe()
-          .map(CurlDeviceProtocol.parseStatusFrame)
+          .map((frame) {
+            final status = CurlDeviceProtocol.parseStatusFrame(frame);
+            debugPrint(
+              'BLE status frame: $frame -> '
+              '${status?.windLabel}/${status?.temperatureLabel}',
+            );
+            return status;
+          })
           .where((status) => status != null)
           .cast<CurlDeviceStatus>();
     });

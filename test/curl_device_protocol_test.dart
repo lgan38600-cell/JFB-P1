@@ -24,6 +24,38 @@ void main() {
     expect(status.coolShotSeconds, 5);
   });
 
+  test('parses legacy status frame without fault byte', () {
+    final status = CurlDeviceProtocol.parseStatusFrame(const <int>[
+      0x55,
+      0x01,
+      0x0E,
+      0x08,
+      0x05,
+    ]);
+
+    expect(status, isNotNull);
+    expect(status!.mode, CurlDeviceMode.normal);
+    expect(status.fault, CurlDeviceFault.none);
+    expect(status.windLabel, '低');
+    expect(status.temperatureLabel, '低温');
+    expect(status.curlSeconds, 14);
+    expect(status.styleSeconds, 8);
+    expect(status.coolShotSeconds, 5);
+  });
+
+  test('ignores legacy command echo without fault byte', () {
+    final status = CurlDeviceProtocol.parseStatusFrame(const <int>[
+      0x55,
+      0x0E,
+      0x08,
+      0x05,
+      0x81,
+      0xF1,
+    ]);
+
+    expect(status, isNull);
+  });
+
   test('parses standby and cool air normal status frames', () {
     final standbyStatus = CurlDeviceProtocol.parseStatusFrame(const <int>[
       0x55,

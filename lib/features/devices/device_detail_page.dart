@@ -248,7 +248,7 @@ class _OverviewTabState extends State<_OverviewTab> {
     AppLocalizations localizations,
   ) async {
     final controller = AppScope.of(context);
-    _draftSettings = controller.curlTimingSettings;
+    _draftSettings = controller.curlTimingSettings.normalized;
     final result = await showModalBottomSheet<CurlTimingSettings>(
       context: context,
       isScrollControlled: true,

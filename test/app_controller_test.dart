@@ -270,6 +270,27 @@ void main() {
     expect(preferences.curlTimingSettings, isNotNull);
   });
 
+  test('normalizes saved curl timing settings on initialize', () async {
+    final preferences = MemoryAppPreferences()
+      ..curlTimingSettings = const CurlTimingSettings(
+        curlSeconds: 1,
+        styleSeconds: 99,
+        coolShotSeconds: 129,
+      ).toJsonString();
+    final controller = AppController(
+      preferences: preferences,
+      packageInfoService: FakePackageInfoService(),
+      bleRepository: FakeBleRepository(),
+      serialRecognitionService: FakeSerialRecognitionService(),
+    );
+
+    await controller.initialize();
+
+    expect(controller.curlTimingSettings.curlSeconds, 5);
+    expect(controller.curlTimingSettings.styleSeconds, 30);
+    expect(controller.curlTimingSettings.coolShotSeconds, 30);
+  });
+
   test('auto curl setting defaults on and persists changes', () async {
     final preferences = MemoryAppPreferences();
     final controller = AppController(

@@ -426,9 +426,8 @@ class AppController extends ChangeNotifier {
           (status) {
             _deviceStatus = status;
             if (status.mode == CurlDeviceMode.standby ||
-                status.mode == CurlDeviceMode.normal ||
-                status.mode == CurlDeviceMode.unknown) {
-              final nextSettings = status.timingSettings;
+                status.mode == CurlDeviceMode.normal) {
+              final nextSettings = status.timingSettings.normalized;
               if (nextSettings.curlSeconds > 0 &&
                   nextSettings.styleSeconds > 0 &&
                   nextSettings.coolShotSeconds > 0) {

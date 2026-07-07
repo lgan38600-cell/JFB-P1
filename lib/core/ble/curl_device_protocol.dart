@@ -76,12 +76,23 @@ class CurlDeviceProtocol {
   static const int _tail = 0xF1;
 
   static CurlDeviceStatus? parseStatusFrame(List<int> frame) {
-    if (frame.length < 6 || frame[0] != _headerA) {
+    if (frame.length < 5 || frame[0] != _headerA) {
       return null;
     }
 
-    final fault = _decodeFault(frame[1]);
+    final hasFaultByte = _isFaultByte(frame[1]);
+    final fault = hasFaultByte ? _decodeFault(frame[1]) : CurlDeviceFault.none;
     if (fault == CurlDeviceFault.unknown) {
+      return null;
+    }
+    final stateIndex = hasFaultByte ? 2 : 1;
+    final curlIndex = stateIndex + 1;
+    final styleIndex = stateIndex + 2;
+    final coolShotIndex = stateIndex + 3;
+    if (frame.length <= coolShotIndex) {
+      return null;
+    }
+    if (!hasFaultByte && frame.length != 5) {
       return null;
     }
 
@@ -93,18 +104,18 @@ class CurlDeviceProtocol {
         windLevel: null,
         temperatureLevel: null,
         fault: fault,
-        curlSeconds: frame[2],
-        styleSeconds: frame[3],
-        coolShotSeconds: frame[4],
+        curlSeconds: frame[stateIndex],
+        styleSeconds: frame[curlIndex],
+        coolShotSeconds: frame[styleIndex],
         rawFrame: List<int>.unmodifiable(frame),
       );
     }
 
-    final state = frame[2];
+    final state = frame[stateIndex];
     final timing = CurlTimingSettings(
-      curlSeconds: frame[3],
-      styleSeconds: frame[4],
-      coolShotSeconds: frame[5],
+      curlSeconds: frame[curlIndex],
+      styleSeconds: frame[styleIndex],
+      coolShotSeconds: frame[coolShotIndex],
     );
 
     if (state == 0x00) {
@@ -199,6 +210,12 @@ class CurlDeviceProtocol {
       _motorFault => CurlDeviceFault.motorFault,
       _ => CurlDeviceFault.unknown,
     };
+  }
+
+  static bool _isFaultByte(int value) {
+    return value == _statusOk ||
+        value == _filterCoverRemoved ||
+        value == _motorFault;
   }
 
   static (int windLevel, int temperatureLevel) _decodeWindAndTemperature(
