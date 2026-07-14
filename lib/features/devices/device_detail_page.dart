@@ -7,6 +7,9 @@ import 'package:flutter_application_1/features/devices/attachment_guide_page.dar
 import 'package:flutter_application_1/features/devices/curl_timing_settings.dart';
 import 'package:flutter_application_1/l10n/generated/app_localizations.dart';
 
+const Color _statusHealthyColor = Color(0xFF42E687);
+const Color _statusErrorColor = Color(0xFFFF6B6B);
+
 class DeviceDetailPage extends StatelessWidget {
   const DeviceDetailPage({
     super.key,
@@ -155,6 +158,11 @@ class _OverviewTabState extends State<_OverviewTab> {
         : device.isConnecting
         ? localizations.connecting
         : localizations.disconnected;
+    final isDeviceHealthy =
+        device.isConnected && !(deviceStatus?.hasFault ?? false);
+    final healthStatusColor = isDeviceHealthy
+        ? _statusHealthyColor
+        : _statusErrorColor;
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -165,15 +173,19 @@ class _OverviewTabState extends State<_OverviewTab> {
               child: _StatusPill(
                 icon: Icons.bluetooth_rounded,
                 label: statusText,
+                accentColor: device.isConnected ? _statusHealthyColor : null,
               ),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: _StatusPill(
-                icon: deviceStatus?.hasFault ?? false
-                    ? Icons.error_outline_rounded
-                    : Icons.check_circle_outline_rounded,
-                label: _faultStatusLabel(context, deviceStatus?.fault),
+                icon: isDeviceHealthy
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.error_outline_rounded,
+                label: device.isConnected
+                    ? _faultStatusLabel(context, deviceStatus?.fault)
+                    : localizations.deviceAbnormalStatus,
+                accentColor: healthStatusColor,
               ),
             ),
           ],
@@ -264,7 +276,6 @@ class _OverviewTabState extends State<_OverviewTab> {
     if (result == null) {
       return;
     }
-
     setState(() {
       _draftSettings = result;
     });
@@ -535,13 +546,20 @@ class _FaultGuideCard extends StatelessWidget {
 }
 
 class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.icon, required this.label});
+  const _StatusPill({
+    required this.icon,
+    required this.label,
+    this.accentColor,
+  });
 
   final IconData icon;
   final String label;
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
+    final foregroundColor =
+        accentColor ?? AppTheme.mutedForeground.withValues(alpha: 0.82);
     return Container(
       height: 58,
       decoration: BoxDecoration(
@@ -553,13 +571,17 @@ class _StatusPill extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Icon(icon, size: 24),
+          Icon(icon, size: 24, color: foregroundColor),
           const SizedBox(width: 8),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontSize: 16,
-              color: AppTheme.mutedForeground.withValues(alpha: 0.82),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontSize: 16,
+                color: foregroundColor,
+              ),
             ),
           ),
         ],
@@ -1212,6 +1234,9 @@ class _StatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final windValue = _localizedWindLabel(localizations, status);
+    final temperatureValue = _localizedTemperatureLabel(localizations, status);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: BoxDecoration(
@@ -1234,7 +1259,7 @@ class _StatusCard extends StatelessWidget {
               Expanded(
                 child: _StatusMetric(
                   icon: Icons.mode_fan_off_rounded,
-                  value: status?.windLabel ?? localizations.deviceWindLow,
+                  value: windValue,
                   label: localizations.deviceWindSpeedLabel,
                 ),
               ),
@@ -1242,8 +1267,7 @@ class _StatusCard extends StatelessWidget {
               Expanded(
                 child: _StatusMetric(
                   icon: Icons.circle_outlined,
-                  value:
-                      status?.temperatureLabel ?? localizations.deviceCoolAir,
+                  value: temperatureValue,
                   label: localizations.deviceTemperatureLabel,
                 ),
               ),
@@ -1252,6 +1276,43 @@ class _StatusCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _localizedWindLabel(
+    AppLocalizations localizations,
+    CurlDeviceStatus? status,
+  ) {
+    final isEnglish = localizations.localeName == 'en';
+    return switch (status?.windLevel) {
+      1 => isEnglish ? 'Low' : '低',
+      2 => isEnglish ? 'Medium' : '中',
+      3 => isEnglish ? 'High' : '高',
+      _ =>
+        status?.mode == CurlDeviceMode.standby
+            ? isEnglish
+                  ? 'Standby'
+                  : '待机'
+            : localizations.deviceWindLow,
+    };
+  }
+
+  String _localizedTemperatureLabel(
+    AppLocalizations localizations,
+    CurlDeviceStatus? status,
+  ) {
+    final isEnglish = localizations.localeName == 'en';
+    return switch (status?.temperatureLevel) {
+      0 => localizations.deviceCoolAir,
+      1 => isEnglish ? 'Low heat' : '低温',
+      2 => isEnglish ? 'Medium heat' : '中温',
+      3 => isEnglish ? 'High heat' : '高温',
+      _ =>
+        status?.mode == CurlDeviceMode.standby
+            ? isEnglish
+                  ? 'Standby'
+                  : '待机'
+            : localizations.deviceCoolAir,
+    };
   }
 }
 

@@ -56,6 +56,20 @@ void main() {
     expect(status, isNull);
   });
 
+  test('ignores timing settings command echo with fault byte', () {
+    final status = CurlDeviceProtocol.parseStatusFrame(const <int>[
+      0x55,
+      0xAA,
+      0x0E,
+      0x08,
+      0x05,
+      0x80,
+      0xF1,
+    ]);
+
+    expect(status, isNull);
+  });
+
   test('parses standby and cool air normal status frames', () {
     final standbyStatus = CurlDeviceProtocol.parseStatusFrame(const <int>[
       0x55,

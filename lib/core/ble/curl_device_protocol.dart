@@ -96,19 +96,8 @@ class CurlDeviceProtocol {
       return null;
     }
 
-    if (frame.length >= 7 &&
-        (frame[5] == _autoCurlEnabledFlag ||
-            frame[5] == _autoCurlDisabledFlag)) {
-      return CurlDeviceStatus(
-        mode: CurlDeviceMode.unknown,
-        windLevel: null,
-        temperatureLevel: null,
-        fault: fault,
-        curlSeconds: frame[stateIndex],
-        styleSeconds: frame[curlIndex],
-        coolShotSeconds: frame[styleIndex],
-        rawFrame: List<int>.unmodifiable(frame),
-      );
+    if (_isTimingSettingsEcho(frame, hasFaultByte: hasFaultByte)) {
+      return null;
     }
 
     final state = frame[stateIndex];
@@ -216,6 +205,22 @@ class CurlDeviceProtocol {
     return value == _statusOk ||
         value == _filterCoverRemoved ||
         value == _motorFault;
+  }
+
+  static bool _isTimingSettingsEcho(
+    List<int> frame, {
+    required bool hasFaultByte,
+  }) {
+    if (hasFaultByte) {
+      return frame.length >= 7 &&
+          (frame[5] == _autoCurlEnabledFlag ||
+              frame[5] == _autoCurlDisabledFlag) &&
+          frame[6] == _tail;
+    }
+    return frame.length >= 6 &&
+        (frame[4] == _autoCurlEnabledFlag ||
+            frame[4] == _autoCurlDisabledFlag) &&
+        frame[5] == _tail;
   }
 
   static (int windLevel, int temperatureLevel) _decodeWindAndTemperature(
