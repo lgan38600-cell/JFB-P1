@@ -5,6 +5,8 @@ import 'package:flutter_application_1/core/ble/models.dart';
 import 'package:flutter_application_1/core/theme/app_theme.dart';
 import 'package:flutter_application_1/features/devices/attachment_guide_page.dart';
 import 'package:flutter_application_1/features/devices/curl_timing_settings.dart';
+import 'package:flutter_application_1/features/hair_profile/hair_profile_detail_page.dart';
+import 'package:flutter_application_1/features/hair_profile/hair_profile_questionnaire_page.dart';
 import 'package:flutter_application_1/l10n/generated/app_localizations.dart';
 
 const Color _statusHealthyColor = Color(0xFF42E687);
@@ -148,6 +150,7 @@ class _OverviewTabState extends State<_OverviewTab> {
     final device = widget.device;
     final controller = AppScope.of(context);
     final deviceStatus = controller.deviceStatus;
+    final hairProfile = controller.hairProfileResponse;
     final isEnglish = Localizations.localeOf(context).languageCode == 'en';
     final detectedAttachmentTitle = isEnglish ? 'Attachment detected' : '检测到风嘴';
     final detectedAttachmentBody = isEnglish
@@ -241,7 +244,55 @@ class _OverviewTabState extends State<_OverviewTab> {
             ).textTheme.displaySmall?.copyWith(fontSize: 18),
           ),
         ),
+        const SizedBox(height: 12),
+        _InfoCard(
+          leading: Icons.person_outline_rounded,
+          title: isEnglish ? 'Hair profile' : '头发资料',
+          subtitle: hairProfile == null
+              ? (isEnglish
+                    ? 'Complete your hair profile before styling.'
+                    : '填写你的头发资料，用于保存个性化造型信息')
+              : (isEnglish
+                    ? 'View and edit your selected hair options.'
+                    : '查看和修改已选择的头发资料'),
+          trailing: Icons.chevron_right_rounded,
+          onTap: () =>
+              _openHairProfile(context, hasProfile: hairProfile != null),
+        ),
+        const SizedBox(height: 12),
+        _InfoCard(
+          leading: Icons.play_circle_outline_rounded,
+          title: isEnglish ? 'Quick start' : '快速入门',
+          subtitle: isEnglish
+              ? 'Learn the first setup and auto-curl activation steps.'
+              : '了解初始设置和自动卷发启动方法',
+          trailing: Icons.chevron_right_rounded,
+          onTap: () => _openQuickStartGuide(context),
+        ),
       ],
+    );
+  }
+
+  Future<void> _openHairProfile(
+    BuildContext context, {
+    required bool hasProfile,
+  }) async {
+    if (hasProfile) {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const HairProfileDetailPage()),
+      );
+      return;
+    }
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => const HairProfileQuestionnairePage(),
+      ),
+    );
+  }
+
+  Future<void> _openQuickStartGuide(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const _QuickStartGuidePage()),
     );
   }
 
@@ -295,6 +346,133 @@ class _OverviewTabState extends State<_OverviewTab> {
   }
 }
 
+class _QuickStartGuidePage extends StatelessWidget {
+  const _QuickStartGuidePage();
+
+  @override
+  Widget build(BuildContext context) {
+    final isEnglish = Localizations.localeOf(context).languageCode == 'en';
+    final title = isEnglish ? 'Quick start' : '快速入门';
+    final steps = isEnglish
+        ? <String>[
+            'The multifunction styling device and hair dryer can remember your personalized program. It connects to the app using Bluetooth wireless technology and customizes curling and styling time based on your hair profile.',
+            'After completing the initial app setup, slide the power switch upward and release it to activate auto curl.',
+          ]
+        : <String>[
+            '多功能美发造型器和吹风机可记住您的个性化程序。它使用蓝牙无线技术连接到应用程序，根据您的个人头发情况定制做卷和造型时间。',
+            '完成初始应用程序设置后，向上滑动并释放电源开关以激活自动卷发功能。',
+          ];
+
+    return Scaffold(
+      appBar: AppBar(title: Text(title), centerTitle: true),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 76, 22, 30),
+          child: Column(
+            children: <Widget>[
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.displaySmall?.copyWith(fontSize: 34),
+              ),
+              const SizedBox(height: 70),
+              for (final step in steps) ...<Widget>[
+                _QuickStartBullet(text: step),
+                const SizedBox(height: 42),
+              ],
+              const Spacer(),
+              Row(
+                children: <Widget>[
+                  _QuickStartPageButton(label: isEnglish ? 'Previous' : '上一页'),
+                  Expanded(
+                    child: Text(
+                      '1/1',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontSize: 30,
+                        color: const Color(0xFF4452F2),
+                      ),
+                    ),
+                  ),
+                  _QuickStartPageButton(label: isEnglish ? 'Next' : '下一页'),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickStartBullet extends StatelessWidget {
+  const _QuickStartBullet({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(top: 9),
+          child: Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: const Color(0xFFC9D3D8),
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontSize: 22,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.mutedForeground.withValues(alpha: 0.68),
+              height: 1.38,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickStartPageButton extends StatelessWidget {
+  const _QuickStartPageButton({required this.label, this.onPressed});
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 112,
+      height: 56,
+      child: FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF063B73),
+          disabledBackgroundColor: const Color(
+            0xFF063B73,
+          ).withValues(alpha: 0.42),
+          foregroundColor: Colors.black,
+          disabledForegroundColor: Colors.black.withValues(alpha: 0.45),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        onPressed: onPressed,
+        child: Text(label),
+      ),
+    );
+  }
+}
+
 class _SupportTab extends StatelessWidget {
   const _SupportTab({required this.localizations});
 
@@ -310,17 +488,280 @@ class _SupportTab extends StatelessWidget {
           title: localizations.deviceSupportGuideTitle,
           subtitle: localizations.deviceSupportGuideBody,
           trailing: Icons.chevron_right_rounded,
-        ),
-        const SizedBox(height: 12),
-        _InfoCard(
-          leading: Icons.build_circle_outlined,
-          title: localizations.deviceSupportCareTitle,
-          subtitle: localizations.deviceSupportCareBody,
-          trailing: Icons.chevron_right_rounded,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const _DeviceUsageGuidePage(),
+              ),
+            );
+          },
         ),
       ],
     );
   }
+}
+
+class _DeviceUsageGuidePage extends StatefulWidget {
+  const _DeviceUsageGuidePage();
+
+  @override
+  State<_DeviceUsageGuidePage> createState() => _DeviceUsageGuidePageState();
+}
+
+class _DeviceUsageGuidePageState extends State<_DeviceUsageGuidePage> {
+  int _pageIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final isEnglish = Localizations.localeOf(context).languageCode == 'en';
+    final pages = _usageGuidePages(isEnglish: isEnglish);
+    final page = pages[_pageIndex];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(isEnglish ? 'How to use your device' : '如何使用您的设备'),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 76, 22, 30),
+          child: Column(
+            children: <Widget>[
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: <Widget>[
+                      Text(
+                        page.title,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.displaySmall?.copyWith(fontSize: 34),
+                      ),
+                      const SizedBox(height: 70),
+                      for (final bullet in page.bullets) ...<Widget>[
+                        _QuickStartBullet(text: bullet),
+                        const SizedBox(height: 34),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              Row(
+                children: <Widget>[
+                  _QuickStartPageButton(
+                    label: isEnglish ? 'Previous' : '上一页',
+                    onPressed: _pageIndex == 0
+                        ? null
+                        : () => setState(() => _pageIndex -= 1),
+                  ),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(
+                        children: <InlineSpan>[
+                          TextSpan(
+                            text: '${_pageIndex + 1}',
+                            style: const TextStyle(color: Color(0xFF4452F2)),
+                          ),
+                          TextSpan(text: '/${pages.length}'),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontSize: 30,
+                        color: AppTheme.mutedForeground.withValues(alpha: 0.22),
+                      ),
+                    ),
+                  ),
+                  _QuickStartPageButton(
+                    label: isEnglish ? 'Next' : '下一页',
+                    onPressed: _pageIndex == pages.length - 1
+                        ? null
+                        : () => setState(() => _pageIndex += 1),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UsageGuidePageData {
+  const _UsageGuidePageData({required this.title, required this.bullets});
+
+  final String title;
+  final List<String> bullets;
+}
+
+List<_UsageGuidePageData> _usageGuidePages({required bool isEnglish}) {
+  if (isEnglish) {
+    return const <_UsageGuidePageData>[
+      _UsageGuidePageData(
+        title: 'Pre-style',
+        bullets: <String>[
+          'For straight and wavy hair, use the quick-dry nozzle or the anti-flyaway smoothing dryer nozzle.',
+          'The anti-flyaway smoothing dryer nozzle has two modes: drying and smoothing. Use the cool tip to switch modes.',
+          'Make sure hair is nearly dry before using the barrels.',
+          'For curly or coily hair, use the firm smoothing brush.',
+          'Work in small sections, brushing downward from the ends toward the roots until hair feels slightly damp.',
+        ],
+      ),
+      _UsageGuidePageData(
+        title: 'Use auto curl',
+        bullets: <String>[
+          'The multifunction styling device and hair dryer can remember your personalized program. It connects to the app using Bluetooth wireless technology and customizes curling and styling time based on your hair profile.',
+          'After completing the initial app setup, slide the power switch upward and release it to activate auto curl.',
+        ],
+      ),
+      _UsageGuidePageData(
+        title: 'Curling',
+        bullets: <String>[
+          'Step 1: Take a section of hair and move the barrel toward the ends. Hair will naturally attach and wrap around the barrel.',
+          'Step 2: Move the styler toward your head without twisting. Your personalized program will run automatically.',
+          'Step 3: Cold shot will activate automatically to set the curl. Airflow lowers automatically when the program finishes.',
+          'Move the device downward until the curl releases.',
+          'Rotate the cool tip to change curl direction.',
+        ],
+      ),
+      _UsageGuidePageData(
+        title: 'Style - smoothing brush',
+        bullets: <String>[
+          'Use the smoothing brush from roots to ends.',
+          'Tip: Face the bristles outward to add volume.',
+          'Turn the bristles inward at the ends to shape the tips.',
+        ],
+      ),
+      _UsageGuidePageData(
+        title: 'Round volumising brush',
+        bullets: <String>[
+          'Step 1: For straight and wavy hair, first use the anti-flyaway smoothing dryer nozzle to dry hair until about 80% dry.',
+          'For curled or bent hair, pre-dry hair with the firm smoothing brush.',
+          'Step 2: Use the round volumising brush from roots to ends.',
+          'Tip: Lift upward while drying to shape the base.',
+        ],
+      ),
+      _UsageGuidePageData(
+        title: 'Blade styling nozzle',
+        bullets: <String>[
+          'Create smooth styles. Dry with high-speed airflow for precise styling.',
+          'Concentrated airflow creates curls, while the teeth create a natural finish.',
+          'Once attached, the Blade styling nozzle rotates 360 degrees for easier styling.',
+          'Tip: Angle the nozzle over the hair ends to avoid interference and create a smooth, aligned finish.',
+        ],
+      ),
+      _UsageGuidePageData(
+        title: 'Smooth - anti-flyaway smoothing dryer nozzle',
+        bullets: <String>[
+          'Rotate the cool tip to switch to smoothing mode.',
+          'Press the hair to switch airflow direction.',
+          'Use on dry hair to hide flyaways.',
+          'Place on the hair until it naturally attaches, then slowly move downward to the ends.',
+          'Suitable for dry and straight hair.',
+        ],
+      ),
+      _UsageGuidePageData(
+        title: 'How to use the contact bar',
+        bullets: <String>[
+          'Place the contact bar against the hair until you hear a click and the hair attaches.',
+          'Run from roots to ends to hide flyaways.',
+        ],
+      ),
+      _UsageGuidePageData(
+        title: 'Diffuse - Wave+Curl diffuser',
+        bullets: <String>[
+          'The diffuser styles and sets hair.',
+          'Dome mode draws airflow into the dome to help enhance natural waves or curls.',
+          'Diffuse mode uses removable teeth to diffuse airflow to the roots, creating textured, voluminous curls and waves.',
+        ],
+      ),
+      _UsageGuidePageData(
+        title: 'Stretch - wide-tooth comb',
+        bullets: <String>['The diffuser styles and sets hair.'],
+      ),
+    ];
+  }
+
+  return const <_UsageGuidePageData>[
+    _UsageGuidePageData(
+      title: '预造型',
+      bullets: <String>[
+        '对于直发和波浪发，请使用干发风嘴-快速干发风嘴或防飞翘干发顺发风嘴。',
+        '防飞翘干发顺滑风嘴有两个模式，干发和顺发。使用冷却顶端切换模式。',
+        '请确保头发几近干燥在使用卷筒。',
+        '卷发或弯曲头发，使用硬齿顺滑梳。',
+        '将头发分成小部分向下梳理，从发梢开始向发根梳理，直到摸起来略微潮湿。',
+      ],
+    ),
+    _UsageGuidePageData(
+      title: '使用自动卷发功能',
+      bullets: <String>[
+        '多功能美发造型器和吹风机可记住您的个性化程序。它使用蓝牙无线技术连接到应用程序，根据您的个人头发情况定制做卷和造型时间。',
+        '完成初始应用程序设置后，向上滑动并释放电源开关以激活自动卷发功能。',
+      ],
+    ),
+    _UsageGuidePageData(
+      title: '冰壶',
+      bullets: <String>[
+        '步骤1-取一缕头发并将卷筒移向发梢。头发将自然吸附并缠绕在卷筒上。',
+        '步骤2-将美发造型器移向头部，无需扭转。您的个性化程序将自动运行。',
+        '步骤3-一键冷风将自动激活为卷发定型。程序完成时气流会自动降低。',
+        '向下移动机器直至松开。',
+        '旋转冷却顶端以改变卷发方向。',
+      ],
+    ),
+    _UsageGuidePageData(
+      title: '造型-顺滑刷',
+      bullets: <String>[
+        '使用顺滑梳从发根向发梢梳理。',
+        '提示：梳齿朝外可增加蓬松度。',
+        '将梳齿在发梢处向内转动以塑造发尾造型。',
+      ],
+    ),
+    _UsageGuidePageData(
+      title: '圆筒丰盈梳',
+      bullets: <String>[
+        '步骤1-对于直发和波浪发，先使用防飞翘干发顺发风嘴将头发吹至八成干。',
+        '对于卷发和卷曲的头发，使用硬齿柔顺刷预先吹干头发。',
+        '步骤2-使用圆筒丰盈梳从发根到发梢理。',
+        '提示：吹干的同时向上提起以为底部造型。',
+      ],
+    ),
+    _UsageGuidePageData(
+      title: 'Blade造型风嘴',
+      bullets: <String>[
+        '打造顺滑造型。使用高速气流吹干，实现精确造型。',
+        '集中气流打造卷曲，梳齿制造自然效果。',
+        '固定后，Blade造型风嘴可旋转360度，方便造型。',
+        '提示：将风嘴倾斜到发束上，避免干扰，并打造光滑、对齐的效果。',
+      ],
+    ),
+    _UsageGuidePageData(
+      title: '顺发-防飞翘干发顺发风嘴',
+      bullets: <String>[
+        '旋转冷却顶端切换平滑模式。',
+        '按压头发以切换气流方向。',
+        '在干发上使用以隐藏飞翘。',
+        '贴在头发上直到自然吸附，然后慢慢向下移动到发梢。',
+        '适用于干发和直发。',
+      ],
+    ),
+    _UsageGuidePageData(
+      title: '如何使用接触杆',
+      bullets: <String>['将接触杆靠在头上，直到听到咔哒声并吸附头发。', '从发根至发梢运行以隐藏飞翘。'],
+    ),
+    _UsageGuidePageData(
+      title: '扩散-Wave+Curl扩散风嘴',
+      bullets: <String>[
+        '扩散风嘴造型和定型。',
+        'Dome模式-气流被吸入圆顶中以帮助增强自然波浪或卷曲。',
+        '扩散模式-可拆卸梳齿可以将气流扩散至发根，形成有质感和蓬松的卷发和发卷。',
+      ],
+    ),
+    _UsageGuidePageData(title: '拉伸-宽齿梳', bullets: <String>['扩散风嘴造型和定型。']),
+  ];
 }
 
 class _SettingsTab extends StatelessWidget {

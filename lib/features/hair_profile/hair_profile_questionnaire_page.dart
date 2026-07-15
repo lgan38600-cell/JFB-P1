@@ -5,7 +5,9 @@ import 'package:flutter_application_1/features/hair_profile/hair_profile_respons
 import 'package:flutter_application_1/l10n/generated/app_localizations.dart';
 
 class HairProfileQuestionnairePage extends StatefulWidget {
-  const HairProfileQuestionnairePage({super.key});
+  const HairProfileQuestionnairePage({super.key, this.initialResponse});
+
+  final HairProfileResponse? initialResponse;
 
   @override
   State<HairProfileQuestionnairePage> createState() =>
@@ -22,6 +24,21 @@ class _HairProfileQuestionnairePageState
   String? _stylingExperience;
   final Set<String> _stylingGoals = <String>{};
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialResponse = widget.initialResponse;
+    if (initialResponse == null) {
+      return;
+    }
+    _hairType = initialResponse.hairType;
+    _hairLength = initialResponse.hairLength;
+    _hairThickness = initialResponse.hairThickness;
+    _styleRetention = initialResponse.styleRetention;
+    _stylingExperience = initialResponse.stylingExperience;
+    _stylingGoals.addAll(initialResponse.stylingGoals);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,9 +84,9 @@ class _HairProfileQuestionnairePageState
                 Text(
                   step.description,
                   textAlign: TextAlign.center,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(color: AppTheme.mutedForeground),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppTheme.mutedForeground,
+                  ),
                 ),
                 const SizedBox(height: 28),
                 Expanded(
@@ -106,8 +123,9 @@ class _HairProfileQuestionnairePageState
                   child: FilledButton(
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF4452F2),
-                      disabledBackgroundColor: const Color(0xFF4452F2)
-                          .withValues(alpha: 0.7),
+                      disabledBackgroundColor: const Color(
+                        0xFF4452F2,
+                      ).withValues(alpha: 0.7),
                     ),
                     onPressed: _canSaveStep(step) && !_isSaving
                         ? () => _saveStep(steps.length)
@@ -422,10 +440,7 @@ class _HairTypeGrid extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontSize: 18,
                         shadows: const <Shadow>[
-                          Shadow(
-                            blurRadius: 12,
-                            color: Colors.black54,
-                          ),
+                          Shadow(blurRadius: 12, color: Colors.black54),
                         ],
                       ),
                     ),
@@ -522,10 +537,7 @@ class _ChoicePanel extends StatelessWidget {
 }
 
 class _SelectionIndicator extends StatelessWidget {
-  const _SelectionIndicator({
-    required this.isSelected,
-    required this.isMulti,
-  });
+  const _SelectionIndicator({required this.isSelected, required this.isMulti});
 
   final bool isSelected;
   final bool isMulti;

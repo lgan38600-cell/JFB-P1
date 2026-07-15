@@ -1,9 +1,28 @@
-Privacy Policy (Placeholder)
+Privacy Policy
 
-This page contains placeholder copy for the first release so the app can ship with the full navigation structure and reading experience before legal text is finalized.
+Introduction
+Styra values user privacy and strictly complies with applicable laws and regulations. Before continuing to use Styra, please carefully read this Privacy Policy. By continuing to use Styra, you confirm that you have fully read and understood all content of this policy.
 
-1. The app may store lightweight preferences you provide, such as language choice and the last connected device identifier.
-2. Bluetooth permission is requested only to discover and connect to your curling wand device.
-3. This version does not include account systems, cloud sync, payments, or marketing profiling.
-4. You can review language and software version inside System Settings and manage Bluetooth access in your device settings.
-5. Replace this placeholder with approved legal copy before production release.
+Styra respects and protects the privacy rights of all users. To provide a more stable and accurate device connection and usage experience, Styra will use relevant information in accordance with this Privacy Policy. Unless otherwise stated in this Privacy Policy, Styra will not disclose or provide such information to third parties without your prior consent. Styra may update this Privacy Policy from time to time. Your agreement to the Styra Service Agreement is deemed as your agreement to all content of this Privacy Policy. This Privacy Policy forms an integral part of the Styra Service Agreement.
+
+Scope of Application
+• (1) Styra does not require account registration or login.
+• (2) Styra may determine the device operating system type, system permission status, and app version to apply the appropriate runtime solution. This information is mainly used for local feature adaptation.
+• (3) When you use Bluetooth connection features, Styra will request system Bluetooth permission to discover, connect to, and manage nearby compatible devices.
+• (4) When you use serial number recognition features, Styra may request camera or photo library permission and use text recognition capabilities integrated in the app to help identify product serial numbers.
+• (5) Styra may store language preferences, product serial numbers, connected device records, auto-curl settings, and timing settings locally on your device so your experience can be restored the next time you use the app.
+
+Use of Information
+• (1) Styra will not provide, sell, rent, share, or trade your personal information or device usage information with unrelated third parties.
+• (2) Styra does not allow any third party to collect, edit, sell, or distribute your personal information by any means. If any user engages in the above activities, Styra has the right to immediately terminate the service agreement with that user.
+• (3) Styra uses system capabilities such as Bluetooth, camera, photo library, device information, and local storage only to enable device connection, serial number recognition, feature adaptation, settings storage, and experience optimization.
+• (4) Styra currently does not include account systems, cloud sync, payments, advertising, or marketing profiling.
+
+Information Storage
+Product information, settings, and preference data collected or stored by Styra are mainly stored locally on your device. You may manage app permissions through system settings, and you may remove saved devices or related data inside the app.
+
+App Technology
+Styra is developed with Flutter. During app operation, Styra may call system capabilities such as Bluetooth, camera, photo library, device information, and local storage as needed for device connection, serial number recognition, feature adaptation, and experience optimization.
+
+Changes to this Privacy Policy
+If we decide to change this Privacy Policy, we will publish those changes in this policy and in other places we consider appropriate so that you can understand how Styra collects, uses, and protects relevant information. Thank you for taking the time to learn about our Privacy Policy. We will do our best to protect your personal information and lawful rights and interests. Thank you again for your trust.

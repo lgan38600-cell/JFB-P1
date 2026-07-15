@@ -61,7 +61,7 @@
   "languagePageTitle": "语言",
   "simplifiedChinese": "简体中文",
   "english": "English",
-  "legalPlaceholderFooter": "首版本地占位法务文案。",
+  "legalDocumentFooter": "请仔细阅读并确认您已理解本文内容。",
   "statusReady": "可以开始连接",
   "statusUnauthorized": "需要授权",
   "statusUnavailable": "蓝牙不可用",

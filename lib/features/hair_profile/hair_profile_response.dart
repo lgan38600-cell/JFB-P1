@@ -17,6 +17,24 @@ class HairProfileResponse {
   final String stylingExperience;
   final List<String> stylingGoals;
 
+  HairProfileResponse copyWith({
+    String? hairType,
+    String? hairLength,
+    String? hairThickness,
+    String? styleRetention,
+    String? stylingExperience,
+    List<String>? stylingGoals,
+  }) {
+    return HairProfileResponse(
+      hairType: hairType ?? this.hairType,
+      hairLength: hairLength ?? this.hairLength,
+      hairThickness: hairThickness ?? this.hairThickness,
+      styleRetention: styleRetention ?? this.styleRetention,
+      stylingExperience: stylingExperience ?? this.stylingExperience,
+      stylingGoals: stylingGoals ?? this.stylingGoals,
+    );
+  }
+
   factory HairProfileResponse.fromJsonString(String source) {
     final map = jsonDecode(source) as Map<String, dynamic>;
     return HairProfileResponse(

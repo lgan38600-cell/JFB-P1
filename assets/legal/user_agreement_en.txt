@@ -1,9 +1,56 @@
-User Agreement (Placeholder)
+User Agreement
 
-This mobile app is a companion experience for the curling wand device. The copy below is placeholder text for structure, navigation, and reading flow in the first build.
+Introduction
+This User Agreement is intended to define the rights and obligations between you and us during your use of Styra (the "App"). Please read this Agreement carefully. By using our App, you agree to the terms described in this Agreement. If you do not agree to any part of this Agreement, you may be unable to use the App or certain services.
 
-1. You can add and connect a nearby curling wand from the My Devices area.
-2. Connection quality depends on your phone's Bluetooth stack, distance, and surrounding interference.
-3. This version does not yet provide device-control commands, temperature settings, account login, or after-sales tools.
-4. You are responsible for using the app and hardware in a safe and lawful manner.
-5. Replace this placeholder with approved agreement copy before public release.
+Services
+We provide the following services through the App:
+• The App works with smart hardware devices supported by Styra;
+• The App provides corresponding experiences for different compatible devices;
+• The App provides detailed device instructions, settings access, and related guidance.
+
+We will make reasonable efforts to ensure the stability and reliability of the services, but we do not guarantee that the services will be uninterrupted, delay-free, or error-free. At the same time, we reserve the right to adjust, update, or terminate part of the services according to business development and operational needs, and to notify you in a timely manner.
+
+User Registration and Accounts
+The App does not require registration or login and can be used after opening.
+
+User Conduct
+
+Compliance with Laws and Regulations
+Your use of the App shall comply with the laws and regulations of China, the European Union, and other relevant countries and regions. You may not use the App to engage in any illegal or criminal activity, including but not limited to spreading obscene, pornographic, violent, terrorist, false, infringing, or otherwise harmful information.
+
+Respect for the Rights of Others
+You shall respect the lawful rights and interests of other users. You may not insult, defame, harass, or infringe upon others' intellectual property rights, privacy rights, or other rights. You may not publish or distribute content that infringes upon others' trade secrets, personal privacy, or other lawful rights and interests.
+
+No Interference with Normal Service Operation
+You may not use any technical means or methods to interfere with or disrupt the normal operation of the App, including but not limited to malicious attacks, web crawling, traffic manipulation, or similar behavior.
+
+Intellectual Property
+The intellectual property rights of the App and all content contained in it, including but not limited to text, images, audio, video, and software code, are owned by us or used under authorization. You may only use such content within the scope authorized by the App and may not copy, modify, distribute, sell, or use it for other commercial purposes unless you obtain our written permission.
+
+Fees and Payment
+The App is completely free.
+
+Service Changes, Suspension, or Termination
+We have the right to change the service content, features, rules, and other aspects of the App according to business development needs and to notify you in a timely manner. Your continued use of the App after such changes take effect will be deemed acceptance of the updated Agreement.
+
+We may suspend or terminate services in the following circumstances:
+• You violate this Agreement;
+• Services cannot be provided normally due to force majeure, government action, technical failure, or similar reasons;
+• We decide to discontinue operation of the App.
+
+After service termination, we will no longer provide services to you, but we may retain some of your information to the extent permitted by laws and regulations.
+
+Disclaimer
+We make reasonable efforts to ensure the accuracy and reliability of the information and services provided by the App, but we do not guarantee that the information and services are completely error-free, complete, or timely. We are not liable for service interruptions, data loss, or other losses caused by force majeure, third-party causes, network failures, or similar factors. Any disputes between you and other users during your use of the App shall be resolved by you independently, and we assume no responsibility.
+
+Agreement Changes
+We have the right to modify and update this Agreement according to business development and changes in laws and regulations, and to announce such changes in the App. If you continue to use the App after the Agreement changes, you are deemed to have accepted the updated Agreement.
+
+Dispute Resolution
+The interpretation and enforcement of this Agreement shall be governed by the laws of China. If any dispute arises during the performance of this Agreement, both parties shall first resolve it through friendly negotiation. If negotiation fails, either party may file a lawsuit with a competent people's court.
+
+Contact Us
+If you have any questions, comments, or suggestions about this Agreement, please contact us through the following methods:
+• Email: 2801646409@qq.com
+• Phone: +8613631252746

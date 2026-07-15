@@ -61,7 +61,7 @@
   "languagePageTitle": "Language",
   "simplifiedChinese": "Simplified Chinese",
   "english": "English",
-  "legalPlaceholderFooter": "Placeholder legal text for first release.",
+  "legalDocumentFooter": "Please read carefully and confirm that you understand this document.",
   "statusReady": "Ready",
   "statusUnauthorized": "Permission required",
   "statusUnavailable": "Bluetooth unavailable",

@@ -205,8 +205,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get english => 'English';
 
   @override
-  String get legalPlaceholderFooter =>
-      'Placeholder legal text for first release.';
+  String get legalDocumentFooter =>
+      'Please read carefully and confirm that you understand this document.';
 
   @override
   String get statusReady => 'Ready';

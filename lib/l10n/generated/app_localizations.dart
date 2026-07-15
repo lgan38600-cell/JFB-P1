@@ -464,11 +464,11 @@ abstract class AppLocalizations {
   /// **'English'**
   String get english;
 
-  /// No description provided for @legalPlaceholderFooter.
+  /// No description provided for @legalDocumentFooter.
   ///
   /// In en, this message translates to:
-  /// **'Placeholder legal text for first release.'**
-  String get legalPlaceholderFooter;
+  /// **'Please read carefully and confirm that you understand this document.'**
+  String get legalDocumentFooter;
 
   /// No description provided for @statusReady.
   ///

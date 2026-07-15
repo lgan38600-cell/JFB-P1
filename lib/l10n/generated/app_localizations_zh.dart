@@ -192,7 +192,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get english => 'English';
 
   @override
-  String get legalPlaceholderFooter => '首版本地占位法务文案。';
+  String get legalDocumentFooter => '请仔细阅读并确认您已理解本文内容。';
 
   @override
   String get statusReady => '可以开始连接';

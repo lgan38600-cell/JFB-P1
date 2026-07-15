@@ -37,7 +37,7 @@ class LegalDocumentPage extends StatelessWidget {
               Text(content, style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 24),
               Text(
-                localizations.legalPlaceholderFooter,
+                localizations.legalDocumentFooter,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.mutedForeground,
                 ),
