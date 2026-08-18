@@ -121,6 +121,47 @@ void main() {
     expect(repository.disconnectedDeviceIds, <String>['wand-1']);
   });
 
+  test(
+    'first device status sends the connected settings command once',
+    () async {
+      final repository = FakeBleRepository();
+      final controller = AppController(
+        preferences: MemoryAppPreferences(),
+        packageInfoService: FakePackageInfoService(),
+        bleRepository: repository,
+        serialRecognitionService: FakeSerialRecognitionService(),
+      );
+      final device = BleDeviceRecord(
+        id: 'wand-1',
+        name: 'JFB-P1',
+        rssi: -45,
+        isConnected: false,
+        isConnecting: false,
+        lastSeenAt: DateTime(2026),
+      );
+      const status = CurlDeviceStatus(
+        mode: CurlDeviceMode.standby,
+        windLevel: null,
+        temperatureLevel: null,
+        fault: CurlDeviceFault.none,
+        curlSeconds: 0,
+        styleSeconds: 0,
+        coolShotSeconds: 0,
+        rawFrame: <int>[],
+      );
+
+      await controller.initialize();
+      await controller.connectToDevice(device);
+      repository.statusController.add(status);
+      repository.statusController.add(status);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(repository.writeCallCount, 1);
+      expect(repository.lastWrittenDeviceId, 'wand-1');
+      expect(repository.lastWrittenAutoCurlEnabled, isTrue);
+    },
+  );
+
   test('repository disconnect event updates primary device state', () async {
     final repository = FakeBleRepository();
     final controller = AppController(
@@ -429,6 +470,9 @@ class FakeBleRepository implements BleRepository {
   bool forgotLastDevice = false;
   int scanCallCount = 0;
   int connectCallCount = 0;
+  int writeCallCount = 0;
+  String? lastWrittenDeviceId;
+  bool? lastWrittenAutoCurlEnabled;
   final StreamController<BleAdapterState> adapterController =
       StreamController<BleAdapterState>.broadcast();
   final StreamController<List<BleDeviceRecord>> scanController =
@@ -481,6 +525,9 @@ class FakeBleRepository implements BleRepository {
     CurlTimingSettings settings,
     bool isAutoCurlEnabled,
   ) async {
+    writeCallCount += 1;
+    lastWrittenDeviceId = deviceId;
+    lastWrittenAutoCurlEnabled = isAutoCurlEnabled;
     return const BleCommandResult.success();
   }
 

@@ -420,11 +420,16 @@ class AppController extends ChangeNotifier {
 
   void _watchDeviceStatus(String deviceId) {
     _deviceStatusSubscription?.cancel();
+    var didSendConnectedCommand = false;
     _deviceStatusSubscription = bleRepository
         .watchDeviceStatus(deviceId)
         .listen(
           (status) {
             _deviceStatus = status;
+            if (!didSendConnectedCommand) {
+              didSendConnectedCommand = true;
+              unawaited(_sendConnectedCommand(deviceId));
+            }
             if (status.mode == CurlDeviceMode.standby ||
                 status.mode == CurlDeviceMode.normal) {
               final nextSettings = status.timingSettings.normalized;
@@ -441,6 +446,22 @@ class AppController extends ChangeNotifier {
             notifyListeners();
           },
         );
+  }
+
+  Future<void> _sendConnectedCommand(String deviceId) async {
+    final device = _primaryDevice;
+    if (device == null || !device.isConnected || device.id != deviceId) {
+      return;
+    }
+    final result = await bleRepository.writeCurlTimingSettings(
+      deviceId,
+      _curlTimingSettings,
+      _isAutoCurlEnabled,
+    );
+    if (!result.isSuccess) {
+      _deviceCommandError = result.errorMessage;
+      notifyListeners();
+    }
   }
 
   Future<void> _handleDeviceDisconnected(String deviceId) async {

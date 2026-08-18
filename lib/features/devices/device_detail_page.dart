@@ -408,9 +408,19 @@ class _QuickStartGuidePage extends StatelessWidget {
 }
 
 class _QuickStartBullet extends StatelessWidget {
-  const _QuickStartBullet({required this.text});
+  const _QuickStartBullet({
+    required this.text,
+    this.fontSize = 22,
+    this.markerSize = 24,
+    this.markerTop = 9,
+    this.gap = 14,
+  });
 
   final String text;
+  final double fontSize;
+  final double markerSize;
+  final double markerTop;
+  final double gap;
 
   @override
   Widget build(BuildContext context) {
@@ -418,22 +428,22 @@ class _QuickStartBullet extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.only(top: 9),
+          padding: EdgeInsets.only(top: markerTop),
           child: Container(
-            width: 24,
-            height: 24,
+            width: markerSize,
+            height: markerSize,
             decoration: BoxDecoration(
               color: const Color(0xFFC9D3D8),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(markerSize / 2),
             ),
           ),
         ),
-        const SizedBox(width: 14),
+        SizedBox(width: gap),
         Expanded(
           child: Text(
             text,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontSize: 22,
+              fontSize: fontSize,
               fontWeight: FontWeight.w500,
               color: AppTheme.mutedForeground.withValues(alpha: 0.68),
               height: 1.38,
@@ -524,29 +534,59 @@ class _DeviceUsageGuidePageState extends State<_DeviceUsageGuidePage> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 76, 22, 30),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
           child: Column(
             children: <Widget>[
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: <Widget>[
-                      Text(
-                        page.title,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.displaySmall?.copyWith(fontSize: 34),
-                      ),
-                      const SizedBox(height: 70),
-                      for (final bullet in page.bullets) ...<Widget>[
-                        _QuickStartBullet(text: bullet),
-                        const SizedBox(height: 34),
-                      ],
-                    ],
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.outline),
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.topCenter,
+                        child: SizedBox(
+                          width: constraints.maxWidth,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              Text(
+                                page.title,
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.displaySmall
+                                    ?.copyWith(fontSize: 26, height: 1.15),
+                              ),
+                              const SizedBox(height: 24),
+                              for (
+                                var index = 0;
+                                index < page.bullets.length;
+                                index++
+                              ) ...<Widget>[
+                                _QuickStartBullet(
+                                  text: page.bullets[index],
+                                  fontSize: 16,
+                                  markerSize: 12,
+                                  markerTop: 5,
+                                  gap: 10,
+                                ),
+                                if (index != page.bullets.length - 1)
+                                  const SizedBox(height: 14),
+                              ],
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
+              const SizedBox(height: 14),
               Row(
                 children: <Widget>[
                   _QuickStartPageButton(
@@ -568,7 +608,7 @@ class _DeviceUsageGuidePageState extends State<_DeviceUsageGuidePage> {
                       ),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontSize: 30,
+                        fontSize: 22,
                         color: AppTheme.mutedForeground.withValues(alpha: 0.22),
                       ),
                     ),
@@ -1729,7 +1769,7 @@ class _StatusCard extends StatelessWidget {
       2 => isEnglish ? 'Medium' : '中',
       3 => isEnglish ? 'High' : '高',
       _ =>
-        status?.mode == CurlDeviceMode.standby
+        (status?.isStandby ?? false)
             ? isEnglish
                   ? 'Standby'
                   : '待机'
@@ -1748,7 +1788,7 @@ class _StatusCard extends StatelessWidget {
       2 => isEnglish ? 'Medium heat' : '中温',
       3 => isEnglish ? 'High heat' : '高温',
       _ =>
-        status?.mode == CurlDeviceMode.standby
+        (status?.isStandby ?? false)
             ? isEnglish
                   ? 'Standby'
                   : '待机'

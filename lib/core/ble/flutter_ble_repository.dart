@@ -22,9 +22,11 @@ class FlutterBleRepository implements BleRepository {
   static const _lastDeviceIdKey = 'last_device_id';
   static const _lastDeviceNameKey = 'last_device_name';
 
-  static const _curlServiceUuid = 'FFE0';
-  static const _curlNotifyCharacteristicUuid = 'FFE4';
-  static const _curlWriteCharacteristicUuid = 'FFE3';
+  static const _curlServiceUuid = 'C21E4B01-9F43-424F-8CC5-93BDF871FCC9';
+  static const _curlWriteCharacteristicUuid =
+      'C21E4B02-9F43-424F-8CC5-93BDF871FCC9';
+  static const _curlNotifyCharacteristicUuid =
+      'C21E4B03-9F43-424F-8CC5-93BDF871FCC9';
 
   final SharedPreferencesAsync preferences;
   final FlutterReactiveBle _ble;
@@ -33,6 +35,7 @@ class FlutterBleRepository implements BleRepository {
       <String, BleDeviceRecord>{};
   final Map<String, _CurlProtocolCharacteristics> _protocolCharacteristics =
       <String, _CurlProtocolCharacteristics>{};
+  final Map<String, int> _profileVersions = <String, int>{};
   final StreamController<String> _disconnectController =
       StreamController<String>.broadcast();
 
@@ -75,10 +78,12 @@ class FlutterBleRepository implements BleRepository {
     _lastSeenDevices.clear();
     final scanStream = Platform.isAndroid
         ? _ble.scanForDevices(
-            withServices: const <Uuid>[],
+            withServices: <Uuid>[_protocolUuid(_curlServiceUuid)],
             scanMode: ScanMode.lowLatency,
           )
-        : _ble.scanForDevices(withServices: const <Uuid>[]);
+        : _ble.scanForDevices(
+            withServices: <Uuid>[_protocolUuid(_curlServiceUuid)],
+          );
 
     return scanStream.map((device) {
       final record = BleDeviceRecord(
@@ -89,7 +94,7 @@ class FlutterBleRepository implements BleRepository {
         isConnecting: false,
         lastSeenAt: DateTime.now(),
       );
-      if (record.name.contains('JFB-P1')) {
+      if (CurlDeviceProtocol.matchesName(device.name)) {
         _lastSeenDevices[device.id] = record;
       }
       final devices = _lastSeenDevices.values.toList(growable: false)
@@ -114,6 +119,7 @@ class FlutterBleRepository implements BleRepository {
             break;
           case DeviceConnectionState.disconnected:
             _protocolCharacteristics.remove(deviceId);
+            _profileVersions.remove(deviceId);
             if (!completer.isCompleted) {
               completer.complete(
                 const BleConnectionResult.failure(
@@ -144,6 +150,7 @@ class FlutterBleRepository implements BleRepository {
     await _connectionSubscription?.cancel();
     _connectionSubscription = null;
     _protocolCharacteristics.remove(deviceId);
+    _profileVersions.remove(deviceId);
   }
 
   @override
@@ -155,10 +162,13 @@ class FlutterBleRepository implements BleRepository {
     return Stream<_CurlProtocolCharacteristics>.fromFuture(
       _resolveProtocolCharacteristics(deviceId),
     ).asyncExpand((characteristics) {
-      return characteristics.notifyCharacteristic
-          .subscribe()
+      return characteristics.notifications
           .map((frame) {
             final status = CurlDeviceProtocol.parseStatusFrame(frame);
+            final fixedFrame = FixedFrameCodec.decodeStatus(frame);
+            if (status != null && fixedFrame != null) {
+              _profileVersions[deviceId] = fixedFrame.profileVersion;
+            }
             debugPrint(
               'BLE status frame: $frame -> '
               '${status?.windLabel}/${status?.temperatureLabel}',
@@ -183,14 +193,24 @@ class FlutterBleRepository implements BleRepository {
     }
 
     try {
+      final profileVersion = _profileVersions[deviceId];
+      if (profileVersion == null) {
+        return const BleCommandResult.failure(
+          'Waiting for the device protocol status frame.',
+        );
+      }
       final characteristics = await _resolveProtocolCharacteristics(deviceId);
-      await characteristics.writeCharacteristic.write(
-        CurlDeviceProtocol.buildTimingSettingsCommand(
-          settings,
-          isAutoCurlEnabled: isAutoCurlEnabled,
-        ),
-        withResponse: true,
+      final command = CurlDeviceProtocol.buildTimingSettingsCommand(
+        settings,
+        isAutoCurlEnabled: isAutoCurlEnabled,
+        profileVersion: profileVersion,
       );
+      final didConfirm = await _writeAndConfirm(characteristics, command);
+      if (!didConfirm) {
+        return const BleCommandResult.failure(
+          'The device did not confirm the BLE command.',
+        );
+      }
       return const BleCommandResult.success();
     } on Object catch (error) {
       return BleCommandResult.failure(_formatError(error));
@@ -276,9 +296,30 @@ class FlutterBleRepository implements BleRepository {
     final characteristics = _CurlProtocolCharacteristics(
       notifyCharacteristic: notifyCharacteristic,
       writeCharacteristic: writeCharacteristic,
+      notifications: notifyCharacteristic.subscribe().asBroadcastStream(),
     );
     _protocolCharacteristics[deviceId] = characteristics;
     return characteristics;
+  }
+
+  Future<bool> _writeAndConfirm(
+    _CurlProtocolCharacteristics characteristics,
+    List<int> command,
+  ) async {
+    for (var attempt = 0; attempt < 2; attempt++) {
+      final echo = characteristics.notifications
+          .firstWhere((frame) => listEquals(frame, command))
+          .then((_) => true)
+          .timeout(const Duration(milliseconds: 250), onTimeout: () => false);
+      await characteristics.writeCharacteristic.write(
+        command,
+        withResponse: true,
+      );
+      if (await echo) {
+        return true;
+      }
+    }
+    return false;
   }
 
   Service? _findService(
@@ -323,7 +364,7 @@ class FlutterBleRepository implements BleRepository {
     if (Platform.isAndroid) {
       return _ble.connectToAdvertisingDevice(
         id: deviceId,
-        withServices: const <Uuid>[],
+        withServices: <Uuid>[_protocolUuid(_curlServiceUuid)],
         prescanDuration: const Duration(seconds: 3),
         connectionTimeout: const Duration(seconds: 12),
       );
@@ -373,8 +414,10 @@ class _CurlProtocolCharacteristics {
   const _CurlProtocolCharacteristics({
     required this.notifyCharacteristic,
     required this.writeCharacteristic,
+    required this.notifications,
   });
 
   final Characteristic notifyCharacteristic;
   final Characteristic writeCharacteristic;
+  final Stream<List<int>> notifications;
 }
